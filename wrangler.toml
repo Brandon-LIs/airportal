@@ -5,7 +5,7 @@ compatibility_date = "2025-04-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "airportal-db"
-database_id = "1b2cc78e-f090-40b6-af3c-9c1194a3ae0d"
+database_id = ""
 
 [[r2_buckets]]
 binding = "R2"
@@ -13,3 +13,13 @@ bucket_name = "airportal-files"
 
 [triggers]
 crons = ["0 0 * * *"]
+
+[vars]
+ADMIN_EMAIL = "bcihal@qq.com"
+ADMIN_PASSWORD = "87543759"
+COLA_KEY = "0qGRUt6GEHzI8I17835141748002xnSg3Lh4H"
+SMTP_EMAIL = "bcihal@163.com"
+SMTP_CODE = "VRqUChStYXGfhmcL"
+SOCIAL_APPID = "2665"
+SOCIAL_KEY = "9aee1d6c8a7c36804d22d2f81a8ef7c1"
+TURNSTILE_KEY = "0x4AAAAAADx7IIs0jQJMgw5l"

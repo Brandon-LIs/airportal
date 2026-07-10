@@ -1,27 +1,23 @@
 import { renderHTML } from './html.js'
 
-const ADMIN_EMAIL = 'bcihal@qq.com'
-const ADMIN_PASSWORD = '87543759'
 let seeded = false
 
-// ─── Email API (luckycola) ─────────────────────────────────────────
-const COLA_KEY = '0qGRUt6GEHzI8I17835141748002xnSg3Lh4H'
-const SMTP_EMAIL = 'bcihal@163.com'
-const SMTP_CODE = 'VRqUChStYXGfhmcL'
-
-async function sendSMTP(to, subject, html) {
+async function sendSMTP(to, subject, html, env) {
   try {
+    const colaKey = env.COLA_KEY || '0qGRUt6GEHzI8I17835141748002xnSg3Lh4H'
+    const smtpEmail = env.SMTP_EMAIL || 'bcihal@163.com'
+    const smtpCode = env.SMTP_CODE || 'VRqUChStYXGfhmcL'
     const res = await fetch('https://luckycola.com.cn/tools/customMail', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        ColaKey: COLA_KEY,
+        ColaKey: colaKey,
         tomail: to,
         fromTitle: '空投快传',
         subject: subject,
         content: html,
-        smtpCode: SMTP_CODE,
-        smtpEmail: SMTP_EMAIL,
+        smtpCode: smtpCode,
+        smtpEmail: smtpEmail,
         smtpCodeType: '163'
       })
     })
@@ -95,14 +91,16 @@ function error(msg, status = 400) {
 async function seedAdmin(env) {
   if (seeded) return
   seeded = true
+  const adminEmail = env.ADMIN_EMAIL || 'bcihal@qq.com'
+  const adminPw = env.ADMIN_PASSWORD || '87543759'
   try {
-    const existing = await env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(ADMIN_EMAIL).first()
+    const existing = await env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(adminEmail).first()
     if (!existing) {
       const salt = generateSalt()
-      const hash = await hashPassword(ADMIN_PASSWORD, salt)
+      const hash = await hashPassword(adminPw, salt)
       await env.DB.prepare(
         'INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)'
-      ).bind(ADMIN_EMAIL, salt + ':' + hash, 'admin').run()
+      ).bind(adminEmail, salt + ':' + hash, 'admin').run()
     }
   } catch (e) { console.error('Seed admin failed:', e.message) }
 }
@@ -202,10 +200,11 @@ export default {
     if (path === '/api/auth/social-callback' && method === 'GET') return handleSocialCallback(request, env)
 
     // Frontend
+    const html = renderHTML({ turnstileKey: env.TURNSTILE_KEY || '0x4AAAAAADx7IIs0jQJMgw5l' })
     if (path === '/' || /^\/\d{6}\/[A-Za-z0-9]{10}$/.test(path)) {
-      return new Response(renderHTML({}), { headers: { 'Content-Type': 'text/html;charset=utf-8' } })
+      return new Response(html, { headers: { 'Content-Type': 'text/html;charset=utf-8' } })
     }
-    return new Response(renderHTML({}), { headers: { 'Content-Type': 'text/html;charset=utf-8' } })
+    return new Response(html, { headers: { 'Content-Type': 'text/html;charset=utf-8' } })
   },
 
   // ─── Cron: cleanup expired files ──────────────────────────────
@@ -245,7 +244,7 @@ async function handleSendCode(request, env) {
 
     const html = '<div style="padding:20px;font-family:sans-serif"><h2>空投快传 - 邮箱验证</h2><p>您的验证码是：</p><p style="font-size:32px;letter-spacing:8px;font-weight:bold;text-align:center;padding:20px;background:#f5f5f5;border-radius:8px">' + code + '</p><p>验证码有效期 10 分钟，请勿泄露给他人。</p></div>'
 
-    const sent = await sendSMTP(email, '空投快传 - 邮箱验证码', html)
+    const sent = await sendSMTP(email, '空投快传 - 邮箱验证码', html, env)
     if (!sent) return error('验证码发送失败，请检查邮箱是否正确', 500)
     // Log success
     console.log('Verification code sent to', email)
@@ -335,14 +334,16 @@ async function handleChangePassword(request, env) {
 }
 
 // ─── Social Login ─────────────────────────────────────────────────
-const SOCIAL_APPID = '2665'
-const SOCIAL_KEY = '9aee1d6c8a7c36804d22d2f81a8ef7c1'
+function getSocialConfig(env) {
+  return { appid: env.SOCIAL_APPID || '2665', key: env.SOCIAL_KEY || '9aee1d6c8a7c36804d22d2f81a8ef7c1' }
+}
 
 async function handleSocialLogin(request, env) {
   const type = new URL(request.url).searchParams.get('type') || 'qq'
+  const cfg = getSocialConfig(env)
   const base = new URL(request.url).origin
   const redirect = encodeURIComponent(base + '/api/auth/social-callback')
-  const url = 'https://u.daib.cn/connect.php?act=login&appid=' + SOCIAL_APPID + '&appkey=' + SOCIAL_KEY + '&type=' + type + '&redirect_uri=' + redirect
+  const url = 'https://u.daib.cn/connect.php?act=login&appid=' + cfg.appid + '&appkey=' + cfg.key + '&type=' + type + '&redirect_uri=' + redirect
   try {
     const res = await fetch(url)
     const data = await res.json()
@@ -357,13 +358,13 @@ async function handleSocialCallback(request, env) {
   const params = new URL(request.url).searchParams
   const type = params.get('type')
   const code = params.get('code')
+  const cfg = getSocialConfig(env)
   if (!type || !code) {
-    // Redirect to frontend with error
     return Response.redirect(new URL(request.url).origin + '/#login_error', 302)
   }
   const base = new URL(request.url).origin
   const redirect = encodeURIComponent(base + '/api/auth/social-callback')
-  const url = 'https://u.daib.cn/connect.php?act=callback&appid=' + SOCIAL_APPID + '&appkey=' + SOCIAL_KEY + '&type=' + type + '&code=' + code + '&redirect_uri=' + redirect
+  const url = 'https://u.daib.cn/connect.php?act=callback&appid=' + cfg.appid + '&appkey=' + cfg.key + '&type=' + type + '&code=' + code + '&redirect_uri=' + redirect
   try {
     const res = await fetch(url)
     const data = await res.json()
@@ -434,8 +435,8 @@ async function handleBindSocialStart(request, env) {
   const user = await authenticate(request, env)
   if (!user) return error('未登录', 401)
   const type = new URL(request.url).searchParams.get('type') || 'qq'
+  const cfg = getSocialConfig(env)
 
-  // Generate a one-time bind code
   const bindCode = generateCode() + '-' + generateCode()
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()
 
@@ -445,7 +446,7 @@ async function handleBindSocialStart(request, env) {
 
   const base = new URL(request.url).origin
   const redirect = encodeURIComponent(base + '/api/auth/social-bind-callback?bind_code=' + bindCode)
-  const loginUrl = 'https://u.daib.cn/connect.php?act=login&appid=' + SOCIAL_APPID + '&appkey=' + SOCIAL_KEY + '&type=' + type + '&redirect_uri=' + redirect
+  const loginUrl = 'https://u.daib.cn/connect.php?act=login&appid=' + cfg.appid + '&appkey=' + cfg.key + '&type=' + type + '&redirect_uri=' + redirect
 
   try {
     const res = await fetch(loginUrl)
@@ -462,12 +463,12 @@ async function handleSocialBindCallback(request, env) {
   const bindCode = params.get('bind_code')
   const type = params.get('type')
   const code = params.get('code')
+  const cfg = getSocialConfig(env)
   const base = new URL(request.url).origin
 
   if (!bindCode || !type || !code) return Response.redirect(base + '/#login_error', 302)
 
   try {
-    // Find the bind request
     const row = await env.DB.prepare(
       `SELECT * FROM verification_codes WHERE email LIKE 'bind:%' AND code = ? AND used = 0 AND expires_at > datetime('now')`
     ).bind(bindCode).first()
@@ -476,9 +477,8 @@ async function handleSocialBindCallback(request, env) {
     const userId = row.email.replace('bind:', '')
     await env.DB.prepare('UPDATE verification_codes SET used = 1 WHERE id = ?').bind(row.id).run()
 
-    // Exchange code for user info
     const redirect = encodeURIComponent(base + '/api/auth/social-bind-callback?bind_code=' + bindCode)
-    const apiUrl = 'https://u.daib.cn/connect.php?act=callback&appid=' + SOCIAL_APPID + '&appkey=' + SOCIAL_KEY + '&type=' + type + '&code=' + code + '&redirect_uri=' + redirect
+    const apiUrl = 'https://u.daib.cn/connect.php?act=callback&appid=' + cfg.appid + '&appkey=' + cfg.key + '&type=' + type + '&code=' + code + '&redirect_uri=' + redirect
     const res = await fetch(apiUrl)
     const data = await res.json()
     if (data.code !== 0 || !data.social_uid) return Response.redirect(base + '/#login_error', 302)
