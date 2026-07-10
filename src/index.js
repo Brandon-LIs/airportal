@@ -4,9 +4,9 @@ let seeded = false
 
 async function sendSMTP(to, subject, html, env) {
   try {
-    const colaKey = env.COLA_KEY || '0qGRUt6GEHzI8I17835141748002xnSg3Lh4H'
-    const smtpEmail = env.SMTP_EMAIL || 'bcihal@163.com'
-    const smtpCode = env.SMTP_CODE || 'VRqUChStYXGfhmcL'
+    const colaKey = env.COLA_KEY || ''
+    const smtpEmail = env.SMTP_EMAIL || ''
+    const smtpCode = env.SMTP_CODE || ''
     const res = await fetch('https://luckycola.com.cn/tools/customMail', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -91,8 +91,8 @@ function error(msg, status = 400) {
 async function seedAdmin(env) {
   if (seeded) return
   seeded = true
-  const adminEmail = env.ADMIN_EMAIL || 'bcihal@qq.com'
-  const adminPw = env.ADMIN_PASSWORD || '87543759'
+  const adminEmail = env.ADMIN_EMAIL || 'admin@example.com'
+  const adminPw = env.ADMIN_PASSWORD || 'changeme123'
   try {
     const existing = await env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(adminEmail).first()
     if (!existing) {
@@ -200,7 +200,7 @@ export default {
     if (path === '/api/auth/social-callback' && method === 'GET') return handleSocialCallback(request, env)
 
     // Frontend
-    const html = renderHTML({ turnstileKey: env.TURNSTILE_KEY || '0x4AAAAAADx7IIs0jQJMgw5l' })
+    const html = renderHTML({ turnstileKey: env.TURNSTILE_KEY || '' })
     if (path === '/' || /^\/\d{6}\/[A-Za-z0-9]{10}$/.test(path)) {
       return new Response(html, { headers: { 'Content-Type': 'text/html;charset=utf-8' } })
     }
@@ -335,7 +335,7 @@ async function handleChangePassword(request, env) {
 
 // ─── Social Login ─────────────────────────────────────────────────
 function getSocialConfig(env) {
-  return { appid: env.SOCIAL_APPID || '2665', key: env.SOCIAL_KEY || '9aee1d6c8a7c36804d22d2f81a8ef7c1' }
+  return { appid: env.SOCIAL_APPID || '', key: env.SOCIAL_KEY || '' }
 }
 
 async function handleSocialLogin(request, env) {

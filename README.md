@@ -2,12 +2,6 @@
 
 > 一个基于 Cloudflare Workers 的文件快传网站，支持跨设备文件传输、邮箱注册、第三方登录、管理后台。
 
-## 在线体验
-
-https://airportal-clone.cloud-drive-zc.workers.dev/
-
-> ⚠️ 演示站可能因网络原因无法从中国大陆直接访问。
-
 ## 功能特性
 
 - **📤 发文件** — 拖拽/选择文件上传，支持有效期设置（1小时 ~ 7天），支持发送文本
@@ -113,16 +107,16 @@ npx wrangler deploy
 
 可通过 `wrangler.toml` 的 `[vars]` 或 `wrangler secret put` 配置：
 
-| 变量 | 说明 | 默认值 |
-|------|------|--------|
-| `ADMIN_EMAIL` | 管理员邮箱 | `bcihal@qq.com` |
-| `ADMIN_PASSWORD` | 管理员密码 | `87543759` |
-| `COLA_KEY` | luckycola 邮件 API Key | - |
-| `SMTP_EMAIL` | SMTP 发信邮箱 | `bcihal@163.com` |
-| `SMTP_CODE` | SMTP 授权码 | - |
-| `SOCIAL_APPID` | 聚合登录 AppID | `2665` |
-| `SOCIAL_KEY` | 聚合登录 AppKey | - |
-| `TURNSTILE_KEY` | Turnstile 站点密钥 | `0x4AAAAAADx7IIs0jQJMgw5l` |
+| 变量 | 说明 | 是否必填 |
+|------|------|----------|
+| `ADMIN_EMAIL` | 管理员邮箱 | 是 |
+| `ADMIN_PASSWORD` | 管理员密码 | 是 |
+| `COLA_KEY` | luckycola 邮件 API Key | 否（邮件功能） |
+| `SMTP_EMAIL` | SMTP 发信邮箱 | 否（邮件功能） |
+| `SMTP_CODE` | SMTP 授权码 | 否（邮件功能） |
+| `SOCIAL_APPID` | 聚合登录 AppID | 否（第三方登录） |
+| `SOCIAL_KEY` | 聚合登录 AppKey | 否（第三方登录） |
+| `TURNSTILE_KEY` | Turnstile 站点密钥 | 否（安全验证） |
 
 ### 7. 登录管理后台
 
