@@ -1,0 +1,15 @@
+name = "airportal-clone"
+main = "src/index.js"
+compatibility_date = "2025-04-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "airportal-db"
+database_id = "1b2cc78e-f090-40b6-af3c-9c1194a3ae0d"
+
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "airportal-files"
+
+[triggers]
+crons = ["0 0 * * *"]

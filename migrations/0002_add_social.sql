@@ -1,0 +1,3 @@
+ALTER TABLE users ADD COLUMN nickname TEXT;
+ALTER TABLE users ADD COLUMN social_type TEXT;
+ALTER TABLE users ADD COLUMN social_uid TEXT;
